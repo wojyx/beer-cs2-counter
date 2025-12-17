@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beer & CS2 Counter</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок с информацией пользователя -->
+        <header class="user-header">
+            <img id="user-photo" src="" alt="Аватар" class="avatar">
+            <div class="user-info">
+                <h1 id="user-name">Пользователь</h1>
+                <p id="user-stats">Загрузка статистики...</p>
+            </div>
+        </header>
+
+        <!-- Основные кнопки действий -->
+        <div class="main-buttons">
+            <div class="action-card" id="beer-card">
+                <div class="icon">🍺</div>
+                <h2>Пиво</h2>
+                <p>Добавить 0.5л</p>
+                <div class="stats" id="beer-stats">0 л</div>
+            </div>
+
+            <div class="action-card" id="cs2-card">
+                <div class="icon">🎮</div>
+                <h2>CS2</h2>
+                <p>Результат игры</p>
+                <div class="stats" id="cs2-stats">0/0/0</div>
+            </div>
+        </div>
+
+        <!-- Кнопки для CS2 (появляются при нажатии) -->
+        <div class="cs2-buttons hidden" id="cs2-buttons">
+            <button class="btn-win" id="btn-win">🏆 Победа</button>
+            <button class="btn-lose" id="btn-lose">💀 Поражение</button>
+            <button class="btn-draw" id="btn-draw">🤝 Ничья</button>
+            <button class="btn-cancel" id="btn-cancel">Отмена</button>
+        </div>
+
+        <!-- Детальная статистика -->
+        <div class="detailed-stats">
+            <h3>📊 Детальная статистика</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Пиво:</span>
+                    <span class="stat-value" id="beer-total">0 л</span>
+                    <span class="stat-sub" id="beer-bottles">(0 бутылок)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">CS2 игр:</span>
+                    <span class="stat-value" id="cs2-total">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Побед:</span>
+                    <span class="stat-value win-text" id="cs2-wins">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Поражений:</span>
+                    <span class="stat-value lose-text" id="cs2-losses">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Ничьих:</span>
+                    <span class="stat-value draw-text" id="cs2-draws">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопки управления -->
+        <div class="control-buttons">
+            <button class="btn-reset" id="btn-reset">🔄 Сбросить всё</button>
+            <button class="btn-share" id="btn-share">📤 Поделиться</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
