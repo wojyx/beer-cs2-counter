@@ -6,6 +6,9 @@
     <title>Beer & CS2 Counter</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="container">
@@ -68,6 +71,44 @@
                     <span class="stat-label">Ничьих:</span>
                     <span class="stat-value draw-text" id="cs2-draws">0</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Глобальная статистика -->
+        <div class="global-stats">
+            <h3>🌍 Глобальная статистика</h3>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="beer-global">🍺 Пиво</button>
+                <button class="tab-btn" data-tab="cs2-global">🎮 CS2</button>
+            </div>
+            
+            <!-- Таблица пива -->
+            <div class="tab-content active" id="beer-global">
+                <div class="table-header">
+                    <span>Игрок</span>
+                    <span>Пиво</span>
+                </div>
+                <div id="beer-leaderboard" class="leaderboard">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </div>
+            
+            <!-- Таблица CS2 -->
+            <div class="tab-content" id="cs2-global">
+                <div class="table-header">
+                    <span>Игрок</span>
+                    <span>Побед</span>
+                    <span>Игр</span>
+                    <span>%</span>
+                </div>
+                <div id="cs2-leaderboard" class="leaderboard">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </div>
+            
+            <div class="global-info">
+                <p>👥 Всего игроков: <span id="total-players">0</span></p>
+                <p>🍺 Всего пива: <span id="total-beer">0</span> л</p>
             </div>
         </div>
 
