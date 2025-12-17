@@ -5,6 +5,11 @@ if (window.Telegram && window.Telegram.WebApp) {
     tg = window.Telegram.WebApp;
     tg.expand();
     console.log('Telegram WebApp API загружен');
+    
+    // Устанавливаем тему Telegram
+    if (tg.colorScheme === 'dark') {
+        document.body.classList.add('dark-theme');
+    }
 } else {
     console.log('Telegram WebApp API не загружен, тестовый режим');
     // Создаем mock-объект для тестирования
@@ -14,7 +19,7 @@ if (window.Telegram && window.Telegram.WebApp) {
             user: {
                 first_name: 'Тестовый',
                 last_name: 'Пользователь',
-                photo_url: 'https://via.placeholder.com/150'
+                photo_url: 'https://ui-avatars.com/api/?name=Тест&background=667eea&color=fff'
             }
         },
         HapticFeedback: {
@@ -23,7 +28,8 @@ if (window.Telegram && window.Telegram.WebApp) {
         },
         shareMessage: (text) => {
             alert('Шаринг (в тестовом режиме):\n' + text);
-        }
+        },
+        colorScheme: 'light'
     };
 }
 
@@ -43,13 +49,13 @@ try {
     if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyDEXAMPLEabc123def456ghi789jkl") {
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
-        console.log('Firebase инициализирован');
+        console.log('✅ Firebase инициализирован');
     } else {
-        console.log('Firebase не настроен, используем локальное хранение');
+        console.log('ℹ️ Firebase не настроен, используем локальное хранение');
         db = null;
     }
 } catch (error) {
-    console.log('Firebase не доступен, работаем в локальном режиме:', error);
+    console.log('⚠️ Firebase не доступен, работаем в локальном режиме:', error);
     db = null;
 }
 
@@ -77,7 +83,9 @@ const elements = {
     btnDraw: document.getElementById('btn-draw'),
     btnCancel: document.getElementById('btn-cancel'),
     btnReset: document.getElementById('btn-reset'),
-    btnShare: document.getElementById('btn-share')
+    btnShare: document.getElementById('btn-share'),
+    
+    themeSwitch: document.getElementById('theme-switch')
 };
 
 // Данные пользователя
@@ -92,8 +100,104 @@ let userData = {
     username: 'Гость'
 };
 
+// Инициализация темы
+function initTheme() {
+    const savedTheme = localStorage.getItem('app-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isTelegramDark = tg.colorScheme === 'dark';
+    
+    // Приоритет: сохраненная тема > Telegram тема > системная тема
+    if (savedTheme === 'dark' || (!savedTheme && (isTelegramDark || prefersDark))) {
+        document.body.classList.add('dark-theme');
+        if (elements.themeSwitch) {
+            elements.themeSwitch.textContent = '☀️';
+        }
+    }
+}
+
+// Переключение темы
+function setupThemeToggle() {
+    if (!elements.themeSwitch) return;
+    
+    elements.themeSwitch.addEventListener('click', () => {
+        // Добавляем класс для плавного перехода
+        document.body.classList.add('theme-transition');
+        
+        const isDark = document.body.classList.toggle('dark-theme');
+        elements.themeSwitch.textContent = isDark ? '☀️' : '🌙';
+        localStorage.setItem('app-theme', isDark ? 'dark' : 'light');
+        
+        // Анимация переключения
+        elements.themeSwitch.style.transform = 'rotate(180deg) scale(1.2)';
+        setTimeout(() => {
+            elements.themeSwitch.style.transform = 'rotate(0deg) scale(1)';
+            // Убираем класс перехода через секунду
+            setTimeout(() => {
+                document.body.classList.remove('theme-transition');
+            }, 500);
+        }, 300);
+        
+        // Тактильная отдача
+        if (tg.HapticFeedback) {
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+    });
+}
+
+// Анимация добавления пива
+function animateBeerAdd() {
+    const beerCard = document.getElementById('beer-card');
+    beerCard.classList.add('beer-added');
+    setTimeout(() => {
+        beerCard.classList.remove('beer-added');
+    }, 500);
+}
+
+// Анимация добавления CS2
+function animateCs2Add(type) {
+    const cs2Card = document.getElementById('cs2-card');
+    cs2Card.classList.add('cs2-added');
+    
+    // Цветная вспышка в зависимости от результата
+    let glowColor;
+    if (type === 'win') {
+        glowColor = 'rgba(72, 187, 120, 0.5)';
+    } else if (type === 'lose') {
+        glowColor = 'rgba(245, 101, 101, 0.5)';
+    } else {
+        glowColor = 'rgba(160, 174, 192, 0.5)';
+    }
+    
+    cs2Card.style.boxShadow = `0 0 20px ${glowColor}`;
+    
+    setTimeout(() => {
+        cs2Card.classList.remove('cs2-added');
+        cs2Card.style.boxShadow = '';
+    }, 300);
+}
+
+// Анимация статистики
+function animateStats() {
+    const statsElements = document.querySelectorAll('.stat-item');
+    statsElements.forEach((el, index) => {
+        el.classList.remove('updated');
+        void el.offsetWidth; // Trigger reflow
+        setTimeout(() => {
+            el.classList.add('updated');
+        }, 50 * index);
+        
+        // Убираем класс через 500ms
+        setTimeout(() => {
+            el.classList.remove('updated');
+        }, 500 + (50 * index));
+    });
+}
+
 // Инициализация
 function init() {
+    // Инициализация темы
+    initTheme();
+    
     // Показываем информацию пользователя из Telegram
     const user = tg.initDataUnsafe?.user;
     
@@ -106,6 +210,9 @@ function init() {
         
         if (user.photo_url) {
             elements.userPhoto.src = user.photo_url;
+            elements.userPhoto.onerror = () => {
+                elements.userPhoto.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName) + '&background=667eea&color=fff';
+            };
         } else {
             // Если нет фото, показываем заглушку с инициалами
             elements.userPhoto.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName) + '&background=667eea&color=fff';
@@ -133,9 +240,24 @@ function init() {
     // Назначаем обработчики событий
     setupEventListeners();
     setupTabs();
+    setupThemeToggle();
     
-    // Загружаем глобальную статистику
-    loadGlobalStats();
+    // Анимация при загрузке
+    setTimeout(() => {
+        document.querySelectorAll('.action-card').forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.classList.add('slide-in');
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100 * index);
+        });
+        
+        // Загружаем глобальную статистику
+        loadGlobalStats();
+    }, 100);
 }
 
 // Загрузка данных из localStorage
@@ -191,6 +313,11 @@ async function saveToFirebase() {
         console.log('✅ Данные сохранены в Firebase');
     } catch (error) {
         console.error('❌ Ошибка сохранения в Firebase:', error);
+        
+        // Если ошибка разрешений, пробуем создать документ
+        if (error.code === 'permission-denied') {
+            console.log('⚠️ Проблема с разрешениями, проверьте правила Firebase');
+        }
     }
 }
 
@@ -268,9 +395,9 @@ async function loadGlobalStats() {
         console.error('❌ Ошибка загрузки глобальной статистики:', error);
         // Показываем сообщение об ошибке пользователю
         document.getElementById('beer-leaderboard').innerHTML = 
-            '<div class="leaderboard-item error">Ошибка загрузки</div>';
+            '<div class="leaderboard-item">Ошибка загрузки</div>';
         document.getElementById('cs2-leaderboard').innerHTML = 
-            '<div class="leaderboard-item error">Ошибка загрузки</div>';
+            '<div class="leaderboard-item">Ошибка загрузки</div>';
     }
 }
 
@@ -294,30 +421,11 @@ function updateLeaderboard(type, data) {
     }
     
     console.log(`📊 Обновляю лидерборд ${type}, записей:`, data.length);
-    console.log('Первая запись данных:', data[0]);
     
     // Для каждого игрока создаем элемент
     data.forEach((item, index) => {
         const rank = index + 1;
-        
-        // Определяем, как получить данные в зависимости от типа
-        let userData, userId, username, photo_url;
-        
-        if (type === 'beer') {
-            // Для пива данные приходят как объекты с полями {id, username, photo_url, beer}
-            userData = item;
-            userId = item.id;
-            username = item.username || 'Неизвестный';
-            photo_url = item.photo_url || '';
-            isCurrentUser = userId === window.userData?.userId?.toString();
-        } else {
-            // Для CS2 данные приходят как объекты с полями {id, username, photo_url, wins, total, winRate}
-            userData = item;
-            userId = item.id;
-            username = item.username || 'Неизвестный';
-            photo_url = item.photo_url || '';
-            isCurrentUser = userId === window.userData?.userId?.toString();
-        }
+        const isCurrentUser = item.id === userData.userId?.toString();
         
         const itemElement = document.createElement('div');
         itemElement.className = `leaderboard-item ${isCurrentUser ? 'you' : ''} rank-${rank}`;
@@ -327,37 +435,44 @@ function updateLeaderboard(type, data) {
             itemElement.innerHTML = `
                 <div class="player-info">
                     <span class="rank-badge">${rank}</span>
-                    <img src="${photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username) + '&background=667eea&color=fff'}" 
-                         alt="${username}" class="player-avatar" 
+                    <img src="${item.photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(item.username) + '&background=667eea&color=fff'}" 
+                         alt="${item.username}" class="player-avatar" 
                          onerror="this.src='https://ui-avatars.com/api/?name=User&background=764ba2&color=fff'">
-                    <span class="player-name">${username}</span>
+                    <span class="player-name">${item.username}</span>
                 </div>
-                <span class="stat-value">${(userData.beer || 0).toFixed(1)} л</span>
+                <span class="stat-value">${(item.beer || 0).toFixed(1)} л</span>
             `;
         } else {
             // Разметка для таблицы CS2
             itemElement.innerHTML = `
                 <div class="player-info">
                     <span class="rank-badge">${rank}</span>
-                    <img src="${photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username) + '&background=667eea&color=fff'}" 
-                         alt="${username}" class="player-avatar"
+                    <img src="${item.photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(item.username) + '&background=667eea&color=fff'}" 
+                         alt="${item.username}" class="player-avatar"
                          onerror="this.src='https://ui-avatars.com/api/?name=User&background=764ba2&color=fff'">
-                    <span class="player-name">${username}</span>
+                    <span class="player-name">${item.username}</span>
                 </div>
-                <span class="stat-value">${userData.wins || 0}</span>
-                <span class="stat-value">${userData.total || 0}</span>
-                <span class="stat-value">${(userData.winRate || 0).toFixed(1)}%</span>
+                <span class="stat-value">${item.wins || 0}</span>
+                <span class="stat-value">${item.total || 0}</span>
+                <span class="stat-value">${(item.winRate || 0).toFixed(1)}%</span>
             `;
         }
         
+        // Анимация появления
+        itemElement.style.opacity = '0';
+        itemElement.style.transform = 'translateY(10px)';
         container.appendChild(itemElement);
+        
+        setTimeout(() => {
+            itemElement.classList.add('fade-in');
+            itemElement.style.opacity = '1';
+            itemElement.style.transform = 'translateY(0)';
+        }, 50 * index);
     });
 }
 
 // Обновление общей статистики
 function updateGlobalStats(totalPlayers, totalBeer) {
-    console.log('📈 Обновляю общую статистику:', totalPlayers, totalBeer);
-    
     const playersElement = document.getElementById('total-players');
     const beerElement = document.getElementById('total-beer');
     
@@ -391,6 +506,9 @@ function updateDisplay() {
     
     // Общая статистика в заголовке
     elements.userStats.textContent = `🍺 ${beerLiters}л | 🎮 ${totalGames} игр`;
+    
+    // Анимация обновления статистики
+    setTimeout(animateStats, 50);
 }
 
 // Настройка вкладок
@@ -410,6 +528,11 @@ function setupTabs() {
             // Показываем соответствующий контент
             const tabId = btn.getAttribute('data-tab');
             document.getElementById(tabId).classList.add('active');
+            
+            // Тактильная отдача
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
         });
     });
 }
@@ -421,6 +544,7 @@ function setupEventListeners() {
         userData.beer += 0.5;
         saveData();
         updateDisplay();
+        animateBeerAdd();
         if (tg.HapticFeedback) {
             tg.HapticFeedback.impactOccurred('light');
         }
@@ -440,6 +564,7 @@ function setupEventListeners() {
         saveData();
         updateDisplay();
         hideCs2Buttons();
+        animateCs2Add('win');
         if (tg.HapticFeedback) {
             tg.HapticFeedback.notificationOccurred('success');
         }
@@ -450,6 +575,7 @@ function setupEventListeners() {
         saveData();
         updateDisplay();
         hideCs2Buttons();
+        animateCs2Add('lose');
         if (tg.HapticFeedback) {
             tg.HapticFeedback.notificationOccurred('error');
         }
@@ -460,6 +586,7 @@ function setupEventListeners() {
         saveData();
         updateDisplay();
         hideCs2Buttons();
+        animateCs2Add('draw');
         if (tg.HapticFeedback) {
             tg.HapticFeedback.notificationOccurred('warning');
         }
@@ -469,7 +596,7 @@ function setupEventListeners() {
     
     // Сброс статистики
     elements.btnReset.addEventListener('click', () => {
-        if (confirm('Вы уверены, что хотите сбросить всю статистику?')) {
+        if (confirm('Вы уверены, что хотите сбросить всю статистику?\nЭто действие нельзя отменить.')) {
             userData = {
                 beer: 0,
                 cs2: { wins: 0, losses: 0, draws: 0 },
@@ -481,6 +608,11 @@ function setupEventListeners() {
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('heavy');
             }
+            
+            // Анимация сброса
+            document.querySelectorAll('.stat-item').forEach(item => {
+                item.classList.add('updated');
+            });
         }
     });
     
@@ -502,7 +634,15 @@ CS2 игр: ${totalGames}
         if (tg.shareMessage) {
             tg.shareMessage(message);
         } else {
-            alert(message);
+            // Альтернативный способ поделиться
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Моя статистика пива и CS2',
+                    text: message
+                });
+            } else {
+                prompt('Скопируйте текст для отправки:', message);
+            }
         }
     });
 }
