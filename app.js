@@ -29,12 +29,12 @@ if (window.Telegram && window.Telegram.WebApp) {
 
 // Firebase конфигурация (ЗАМЕНИТЕ ЭТИ ДАННЫЕ НА ВАШИ!)
 const firebaseConfig = {
-    apiKey: "AIzaSyDEXAMPLEabc123def456ghi789jkl",
-    authDomain: "beer-cs2-stats.firebaseapp.com",
-    projectId: "beer-cs2-stats",
-    storageBucket: "beer-cs2-stats.appspot.com",
-    messagingSenderId: "123456789012",
-    appId: "1:123456789012:web:abc123def456ghi789jkl"
+  apiKey: "AIzaSyAUIq3K4mcjGOccQOghm1H-aLdMOYpOWMA",
+  authDomain: "beer-cs2-counter.firebaseapp.com",
+  projectId: "beer-cs2-counter",
+  storageBucket: "beer-cs2-counter.firebasestorage.app",
+  messagingSenderId: "229120924522",
+  appId: "1:229120924522:web:d6723c4d64d848d77da313"
 };
 
 // Инициализация Firebase
@@ -474,3 +474,4 @@ function hideCs2Buttons() {
 
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', init);
+
