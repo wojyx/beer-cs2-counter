@@ -166,7 +166,10 @@ function saveData() {
     // Сохраняем в Firebase если доступен
     if (db && userData.userId) {
         saveToFirebase();
-        loadGlobalStats(); // Обновляем статистику после сохранения
+        // Обновляем глобальную статистику после сохранения
+        setTimeout(() => {
+            loadGlobalStats();
+        }, 1000); // Небольшая задержка для обновления данных в Firebase
     }
 }
 
@@ -185,9 +188,9 @@ async function saveToFirebase() {
             last_updated: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         
-        console.log('Данные сохранены в Firebase');
+        console.log('✅ Данные сохранены в Firebase');
     } catch (error) {
-        console.error('Ошибка сохранения в Firebase:', error);
+        console.error('❌ Ошибка сохранения в Firebase:', error);
     }
 }
 
@@ -198,49 +201,77 @@ async function loadGlobalStats() {
         return;
     }
     
+    console.log('🔄 Начинаю загрузку глобальной статистики...');
+    
     try {
-        // Загрузка топа по пиву
-        const beerSnapshot = await db.collection('users')
-            .orderBy('beer', 'desc')
-            .limit(20)
-            .get();
+        // 1. Загружаем ВСЕХ пользователей один раз
+        const allUsersSnapshot = await db.collection('users').get();
+        console.log('📥 Загружено пользователей из Firebase:', allUsersSnapshot.size);
         
-        updateLeaderboard('beer', beerSnapshot);
+        if (allUsersSnapshot.empty) {
+            console.log('В базе пока нет данных пользователей');
+            document.getElementById('beer-leaderboard').innerHTML = '<div class="leaderboard-item">Нет данных</div>';
+            document.getElementById('cs2-leaderboard').innerHTML = '<div class="leaderboard-item">Нет данных</div>';
+            updateGlobalStats(0, 0);
+            return;
+        }
         
-        // Загрузка топа по CS2
-        const cs2Snapshot = await db.collection('users').get();
-        const cs2Data = processCs2Stats(cs2Snapshot);
-        updateLeaderboard('cs2', cs2Data);
+        // 2. Обрабатываем данные для пива (сортировка по beer)
+        const beerData = [];
+        const cs2Data = [];
+        let totalBeer = 0;
         
-        // Общая статистика
-        updateGlobalStats(beerSnapshot);
+        allUsersSnapshot.forEach(doc => {
+            const user = doc.data();
+            const userId = doc.id;
+            
+            // Для пива
+            beerData.push({
+                id: userId,
+                username: user.username || 'Неизвестный',
+                photo_url: user.photo_url || '',
+                beer: user.beer || 0
+            });
+            
+            // Для CS2
+            const wins = user.cs2_wins || 0;
+            const losses = user.cs2_losses || 0;
+            const draws = user.cs2_draws || 0;
+            const totalGames = wins + losses + draws;
+            const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
+            
+            cs2Data.push({
+                id: userId,
+                username: user.username || 'Неизвестный',
+                photo_url: user.photo_url || '',
+                wins: wins,
+                total: totalGames,
+                winRate: winRate
+            });
+            
+            // Суммируем общее пиво
+            totalBeer += user.beer || 0;
+        });
+        
+        // 3. Сортируем
+        beerData.sort((a, b) => b.beer - a.beer);
+        cs2Data.sort((a, b) => b.wins - a.wins);
+        
+        // 4. Обновляем интерфейс
+        updateLeaderboard('beer', beerData.slice(0, 20));
+        updateLeaderboard('cs2', cs2Data.slice(0, 20));
+        updateGlobalStats(allUsersSnapshot.size, totalBeer);
+        
+        console.log('✅ Глобальная статистика загружена');
         
     } catch (error) {
-        console.error('Ошибка загрузки глобальной статистики:', error);
+        console.error('❌ Ошибка загрузки глобальной статистики:', error);
+        // Показываем сообщение об ошибке пользователю
+        document.getElementById('beer-leaderboard').innerHTML = 
+            '<div class="leaderboard-item error">Ошибка загрузки</div>';
+        document.getElementById('cs2-leaderboard').innerHTML = 
+            '<div class="leaderboard-item error">Ошибка загрузки</div>';
     }
-}
-
-// Обработка статистики CS2
-function processCs2Stats(snapshot) {
-    const players = [];
-    
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        const totalGames = (data.cs2_wins || 0) + (data.cs2_losses || 0) + (data.cs2_draws || 0);
-        const winRate = totalGames > 0 ? ((data.cs2_wins || 0) / totalGames) * 100 : 0;
-        
-        players.push({
-            id: doc.id,
-            username: data.username || 'Неизвестный',
-            photo_url: data.photo_url || '',
-            wins: data.cs2_wins || 0,
-            total: totalGames,
-            winRate: winRate
-        });
-    });
-    
-    // Сортировка по победам
-    return players.sort((a, b) => b.wins - a.wins).slice(0, 20);
 }
 
 // Обновление таблиц лидерборда
@@ -248,86 +279,76 @@ function updateLeaderboard(type, data) {
     const containerId = type === 'beer' ? 'beer-leaderboard' : 'cs2-leaderboard';
     const container = document.getElementById(containerId);
     
-    if (!container) return;
+    if (!container) {
+        console.error('Не найден контейнер для лидерборда:', containerId);
+        return;
+    }
     
+    // Очищаем контейнер
     container.innerHTML = '';
     
-    if (data.empty || data.length === 0) {
+    // Проверяем, есть ли данные
+    if (!data || data.length === 0) {
         container.innerHTML = '<div class="leaderboard-item">Нет данных</div>';
         return;
     }
     
-    const isFirestore = data.forEach; // Проверяем тип данных
+    console.log(`📊 Обновляю лидерборд ${type}, записей:`, data.length);
     
-    if (isFirestore) {
-        // Данные из Firestore
-        let rank = 1;
-        data.forEach((doc, index) => {
-            const user = doc.data();
-            const isCurrentUser = doc.id === userData.userId?.toString();
-            
-            const item = document.createElement('div');
-            item.className = `leaderboard-item ${isCurrentUser ? 'you' : ''} rank-${rank}`;
-            
+    // Для каждого игрока создаем элемент
+    data.forEach((user, index) => {
+        const rank = index + 1;
+        const isCurrentUser = user.id === userData.userId?.toString();
+        
+        const item = document.createElement('div');
+        item.className = `leaderboard-item ${isCurrentUser ? 'you' : ''} rank-${rank}`;
+        
+        if (type === 'beer') {
+            // Разметка для таблицы пива
             item.innerHTML = `
                 <div class="player-info">
                     <span class="rank-badge">${rank}</span>
                     <img src="${user.photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=667eea&color=fff'}" 
                          alt="${user.username}" class="player-avatar" 
                          onerror="this.src='https://ui-avatars.com/api/?name=User&background=764ba2&color=fff'">
-                    <span class="player-name">${user.username || 'Без имени'}</span>
+                    <span class="player-name">${user.username}</span>
                 </div>
                 <span class="stat-value">${(user.beer || 0).toFixed(1)} л</span>
             `;
-            
-            container.appendChild(item);
-            rank++;
-        });
-    } else {
-        // Обработанные данные CS2
-        data.forEach((user, index) => {
-            const isCurrentUser = user.id === userData.userId?.toString();
-            
-            const item = document.createElement('div');
-            item.className = `leaderboard-item ${isCurrentUser ? 'you' : ''} rank-${index + 1}`;
-            
+        } else {
+            // Разметка для таблицы CS2
             item.innerHTML = `
                 <div class="player-info">
-                    <span class="rank-badge">${index + 1}</span>
+                    <span class="rank-badge">${rank}</span>
                     <img src="${user.photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=667eea&color=fff'}" 
                          alt="${user.username}" class="player-avatar"
                          onerror="this.src='https://ui-avatars.com/api/?name=User&background=764ba2&color=fff'">
                     <span class="player-name">${user.username}</span>
                 </div>
-                <span class="stat-value">${user.wins}</span>
-                <span class="stat-value">${user.total}</span>
-                <span class="stat-value">${user.winRate.toFixed(1)}%</span>
+                <span class="stat-value">${user.wins || 0}</span>
+                <span class="stat-value">${user.total || 0}</span>
+                <span class="stat-value">${(user.winRate || 0).toFixed(1)}%</span>
             `;
-            
-            container.appendChild(item);
-        });
-    }
+        }
+        
+        container.appendChild(item);
+    });
 }
 
 // Обновление общей статистики
-function updateGlobalStats(snapshot) {
-    if (!snapshot || snapshot.empty) {
-        document.getElementById('total-players').textContent = '0';
-        document.getElementById('total-beer').textContent = '0';
-        return;
+function updateGlobalStats(totalPlayers, totalBeer) {
+    console.log('📈 Обновляю общую статистику:', totalPlayers, totalBeer);
+    
+    const playersElement = document.getElementById('total-players');
+    const beerElement = document.getElementById('total-beer');
+    
+    if (playersElement) {
+        playersElement.textContent = totalPlayers || 0;
     }
     
-    let totalPlayers = 0;
-    let totalBeer = 0;
-    
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        totalPlayers++;
-        totalBeer += data.beer || 0;
-    });
-    
-    document.getElementById('total-players').textContent = totalPlayers;
-    document.getElementById('total-beer').textContent = totalBeer.toFixed(1);
+    if (beerElement) {
+        beerElement.textContent = (totalBeer || 0).toFixed(1);
+    }
 }
 
 // Обновление отображения
@@ -474,4 +495,3 @@ function hideCs2Buttons() {
 
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', init);
-
