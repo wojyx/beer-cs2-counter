@@ -294,44 +294,63 @@ function updateLeaderboard(type, data) {
     }
     
     console.log(`📊 Обновляю лидерборд ${type}, записей:`, data.length);
+    console.log('Первая запись данных:', data[0]);
     
     // Для каждого игрока создаем элемент
-    data.forEach((user, index) => {
+    data.forEach((item, index) => {
         const rank = index + 1;
-        const isCurrentUser = user.id === userData.userId?.toString();
         
-        const item = document.createElement('div');
-        item.className = `leaderboard-item ${isCurrentUser ? 'you' : ''} rank-${rank}`;
+        // Определяем, как получить данные в зависимости от типа
+        let userData, userId, username, photo_url;
+        
+        if (type === 'beer') {
+            // Для пива данные приходят как объекты с полями {id, username, photo_url, beer}
+            userData = item;
+            userId = item.id;
+            username = item.username || 'Неизвестный';
+            photo_url = item.photo_url || '';
+            isCurrentUser = userId === window.userData?.userId?.toString();
+        } else {
+            // Для CS2 данные приходят как объекты с полями {id, username, photo_url, wins, total, winRate}
+            userData = item;
+            userId = item.id;
+            username = item.username || 'Неизвестный';
+            photo_url = item.photo_url || '';
+            isCurrentUser = userId === window.userData?.userId?.toString();
+        }
+        
+        const itemElement = document.createElement('div');
+        itemElement.className = `leaderboard-item ${isCurrentUser ? 'you' : ''} rank-${rank}`;
         
         if (type === 'beer') {
             // Разметка для таблицы пива
-            item.innerHTML = `
+            itemElement.innerHTML = `
                 <div class="player-info">
                     <span class="rank-badge">${rank}</span>
-                    <img src="${user.photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=667eea&color=fff'}" 
-                         alt="${user.username}" class="player-avatar" 
+                    <img src="${photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username) + '&background=667eea&color=fff'}" 
+                         alt="${username}" class="player-avatar" 
                          onerror="this.src='https://ui-avatars.com/api/?name=User&background=764ba2&color=fff'">
-                    <span class="player-name">${user.username}</span>
+                    <span class="player-name">${username}</span>
                 </div>
-                <span class="stat-value">${(user.beer || 0).toFixed(1)} л</span>
+                <span class="stat-value">${(userData.beer || 0).toFixed(1)} л</span>
             `;
         } else {
             // Разметка для таблицы CS2
-            item.innerHTML = `
+            itemElement.innerHTML = `
                 <div class="player-info">
                     <span class="rank-badge">${rank}</span>
-                    <img src="${user.photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username) + '&background=667eea&color=fff'}" 
-                         alt="${user.username}" class="player-avatar"
+                    <img src="${photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username) + '&background=667eea&color=fff'}" 
+                         alt="${username}" class="player-avatar"
                          onerror="this.src='https://ui-avatars.com/api/?name=User&background=764ba2&color=fff'">
-                    <span class="player-name">${user.username}</span>
+                    <span class="player-name">${username}</span>
                 </div>
-                <span class="stat-value">${user.wins || 0}</span>
-                <span class="stat-value">${user.total || 0}</span>
-                <span class="stat-value">${(user.winRate || 0).toFixed(1)}%</span>
+                <span class="stat-value">${userData.wins || 0}</span>
+                <span class="stat-value">${userData.total || 0}</span>
+                <span class="stat-value">${(userData.winRate || 0).toFixed(1)}%</span>
             `;
         }
         
-        container.appendChild(item);
+        container.appendChild(itemElement);
     });
 }
 
