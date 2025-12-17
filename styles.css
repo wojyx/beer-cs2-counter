@@ -190,6 +190,152 @@ body {
 .lose-text { color: #e53e3e; }
 .draw-text { color: #718096; }
 
+/* Глобальная статистика */
+.global-stats {
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.global-stats h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    text-align: center;
+}
+
+/* Вкладки */
+.tabs {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: #a0aec0;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tab-btn.active {
+    color: #667eea;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #667eea;
+}
+
+/* Таблицы */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    padding: 10px;
+    background: #edf2f7;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+#cs2-global .table-header {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+}
+
+.leaderboard {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 8px;
+    background: white;
+}
+
+.leaderboard-item {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    padding: 12px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    align-items: center;
+}
+
+#cs2-global .leaderboard-item {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+}
+
+.leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-item.you {
+    background: #ebf4ff;
+    border-left: 3px solid #667eea;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+.player-name {
+    font-weight: 500;
+    color: #2d3748;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.rank-1 .rank-badge { background: #f6ad55; } /* Золото */
+.rank-2 .rank-badge { background: #a0aec0; } /* Серебро */
+.rank-3 .rank-badge { background: #d69e2e; } /* Бронза */
+
+.global-info {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.9em;
+    color: #718096;
+}
+
+.global-info p {
+    margin: 5px 0;
+}
+
 /* Кнопки управления */
 .control-buttons {
     display: grid;
